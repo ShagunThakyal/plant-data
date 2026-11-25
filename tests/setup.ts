@@ -8,6 +8,23 @@ if (!process.env.DATABASE_URL) {
 	);
 }
 
+// Tests create and delete rows. Refuse any database not named as a test one, so a URL copied from the live
+// site or from development can never be written to by `npm test`. CI's database is named `..._test` too.
+const databaseName = testDatabaseName(process.env.DATABASE_URL);
+if (!databaseName?.endsWith("_test")) {
+	throw new Error(
+		`Refusing to run the tests against the database "${databaseName ?? "unreadable URL"}". Tests write and delete rows, so they only run against a database whose name ends in "_test" (for example plant_data_test). Point DATABASE_URL in .env.test at one.`,
+	);
+}
+
+function testDatabaseName(url: string): string | null {
+	try {
+		return decodeURIComponent(new URL(url).pathname.slice(1)) || null;
+	} catch {
+		return null;
+	}
+}
+
 afterAll(async () => {
 	await prisma.$disconnect();
 });

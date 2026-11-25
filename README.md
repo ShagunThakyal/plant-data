@@ -37,7 +37,8 @@ react-hook-form, Tailwind CSS 4 with Radix primitives, Biome and Vitest. Node 22
 ## Tests
 
 `npm test` reads `DATABASE_URL` from `.env.test`, not `.env`, so tests never share the database you develop
-on or the live one. The tests create and delete their own rows.
+on or the live one. The tests create and delete their own rows, so they refuse to run unless the database
+name ends in `_test`.
 
 1. Create `.env.test` with `DATABASE_URL` and `DIRECT_URL` for the test database. With the Docker database:
    `postgresql://postgres:postgres@localhost:5433/plant_data_test` for both.
