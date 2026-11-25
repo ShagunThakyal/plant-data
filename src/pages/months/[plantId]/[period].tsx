@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 
 import { AppLayout } from "@/components/layout/AppLayout";
+import { FlagList } from "@/components/reports/FlagList";
 import { MonthStatusBadge } from "@/components/reports/MonthStatusBadge";
 import { OwnerReportForm } from "@/components/reports/OwnerReportForm";
 import { ReportHistory } from "@/components/reports/ReportHistory";
@@ -128,6 +129,11 @@ export default function ReportPage() {
 					<OwnerReportForm report={data} />
 				) : (
 					<>
+						<FlagList
+							flags={data.flags}
+							notes={Object.fromEntries(data.lines.map((line) => [line.factorKey, line.note]))}
+							intro="Check these before approving. They are warnings, not errors; the plant's notes are shown beside them."
+						/>
 						<ReadOnlyLinesTable lines={data.lines} />
 						<ReportTotals
 							scope1Tonnes={data.totals.scope1Tonnes}

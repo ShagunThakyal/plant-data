@@ -20,16 +20,22 @@ function formatQuantity(quantity: number | null, unit: string): string {
 	return `${formatNumber(quantity, 4)} ${isUnit(unit) ? unitLabel(unit) : unit}`;
 }
 
-/** The line's CO2 in tonnes, from what is typed now, or null if it cannot be worked out yet. */
-export function previewTonnes(line: ReportLineView, values: LineFormValues | undefined): number | null {
-	if (!values || line.kgCo2PerUnit === null || !isUnit(values.unit) || !isUnit(line.factorUnit)) {
+/** What is typed now, in the factor's unit, or null if it is blank or not a number yet. */
+export function typedInFactorUnit(line: ReportLineView, values: LineFormValues | undefined): number | null {
+	if (!values || !isUnit(values.unit) || !isUnit(line.factorUnit)) {
 		return null;
 	}
 	const parsed = parseQuantity(values.quantity);
 	if (!parsed.ok || parsed.value === null) {
 		return null;
 	}
-	return (convert(parsed.value, values.unit, line.factorUnit) * line.kgCo2PerUnit) / 1000;
+	return convert(parsed.value, values.unit, line.factorUnit);
+}
+
+/** The line's CO2 in tonnes, from what is typed now, or null if it cannot be worked out yet. */
+export function previewTonnes(line: ReportLineView, values: LineFormValues | undefined): number | null {
+	const quantity = typedInFactorUnit(line, values);
+	return quantity === null || line.kgCo2PerUnit === null ? null : (quantity * line.kgCo2PerUnit) / 1000;
 }
 
 function ScopeBadge({ scope }: { scope: number | null }) {

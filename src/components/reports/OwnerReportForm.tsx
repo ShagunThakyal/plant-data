@@ -3,7 +3,13 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
-import { EditableLinesTable, type ReportFormValues, previewTonnes } from "@/components/reports/ReportLinesTable";
+import { FlagList } from "@/components/reports/FlagList";
+import {
+	EditableLinesTable,
+	type ReportFormValues,
+	previewTonnes,
+	typedInFactorUnit,
+} from "@/components/reports/ReportLinesTable";
 import { ReportTotals } from "@/components/reports/ReportTotals";
 import { OrenButton } from "@/components/ui/OrenButton";
 import {
@@ -15,6 +21,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { computeFlags, toFlagLines } from "@/lib/flags";
 import { formatPeriod } from "@/lib/period";
 import { parseQuantity, quantityText } from "@/lib/quantity";
 import type { LineInput, ReportView } from "@/lib/schemas/report";
@@ -88,6 +95,18 @@ export function OwnerReportForm({ report }: { report: ReportView }) {
 		if (line.scope === 2) live.scope2Tonnes += tonnes;
 	});
 	const blankCount = values.filter((line) => line.quantity.trim() === "").length;
+	// The same flags the reviewer will see, worked out from what is typed now.
+	const flags = computeFlags({
+		plantType: report.plant.type,
+		cementCapacityTpa: report.plant.cementCapacityTpa,
+		lines: toFlagLines(
+			report.lines.map((line, index) => ({
+				...line,
+				quantityInFactorUnit: typedInFactorUnit(line, values[index]),
+			})),
+		),
+	});
+	const notes = Object.fromEntries(values.map((line) => [line.factorKey, line.note.trim() || null]));
 
 	return (
 		<form
@@ -100,6 +119,12 @@ export function OwnerReportForm({ report }: { report: ReportView }) {
 			<EditableLinesTable lines={report.lines} form={form} />
 
 			<ReportTotals {...live} note="Worked out with today's emission factors. The factors are fixed when you submit." />
+
+			<FlagList
+				flags={flags}
+				notes={notes}
+				intro="These do not stop you submitting. If a figure is right, add a note on its line to explain it for the reviewer."
+			/>
 
 			<div className="flex flex-wrap items-center gap-3">
 				<OrenButton

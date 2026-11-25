@@ -27,7 +27,7 @@ import { formatDateTime, formatNumber } from "@/lib/format";
 import { formatPeriod } from "@/lib/period";
 import { api } from "@/utils/api";
 
-const COLUMNS = 6;
+const COLUMNS = 7;
 
 /** Months waiting for review, the longest-waiting first. */
 export default function ReviewQueuePage() {
@@ -40,7 +40,7 @@ export default function ReviewQueuePage() {
 			<PageHeader bordered>
 				<PageHeaderHeading>Waiting for review</PageHeaderHeading>
 				<PageHeaderDescription>
-					Plant months that have been submitted. Approved months count in the company figures.
+					Submitted plant months, those with figures to look at first. Approved months count in the company figures.
 				</PageHeaderDescription>
 			</PageHeader>
 
@@ -50,6 +50,7 @@ export default function ReviewQueuePage() {
 						<TableHead>Plant</TableHead>
 						<TableHead>Month</TableHead>
 						<TableHead>Submitted</TableHead>
+						<TableHead>Flags</TableHead>
 						<TableHead align="right">Scope 1 (t CO2)</TableHead>
 						<TableHead align="right">Scope 2 (t CO2)</TableHead>
 						<TableHead />
@@ -113,6 +114,15 @@ export default function ReviewQueuePage() {
 											</span>
 										)}
 									</span>
+								</TableCell>
+								<TableCell>
+									{item.flagCount > 0 ? (
+										<Badge tone="warning" data-testid={`review-flags-${item.plant.code}-${item.period}`}>
+											{item.flagCount} to look at
+										</Badge>
+									) : (
+										<span className="text-text-secondary">None</span>
+									)}
 								</TableCell>
 								<TableCell align="right">{formatNumber(item.totals.scope1Tonnes, 1)}</TableCell>
 								<TableCell align="right">{formatNumber(item.totals.scope2Tonnes, 1)}</TableCell>
