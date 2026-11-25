@@ -9,26 +9,29 @@ datasource db {
 }
 
 model Company {
-  id         String      @id @default(cuid())
-  name       String      @unique
-  createdAt  DateTime    @default(now())
-  users      User[]
-  plants     Plant[]
-  changeLogs ChangeLog[]
+  id           String          @id @default(cuid())
+  name         String          @unique
+  createdAt    DateTime        @default(now())
+  users        User[]
+  plants       Plant[]
+  changeLogs   ChangeLog[]
+  reports      MonthlyReport[]
+  reportEvents ReportEvent[]
 }
 
 model User {
-  id        String      @id @default(cuid())
-  name      String
-  email     String      @unique
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
   /// Values from ROLES in src/lib/roles.ts. A user can hold more than one role.
-  roles     String[]
-  companyId String
-  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  roles        String[]
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   /// Plants whose data this user is responsible for.
-  plants    Plant[]     @relation("PlantDataOwners")
-  changes   ChangeLog[]
-  createdAt DateTime    @default(now())
+  plants       Plant[]       @relation("PlantDataOwners")
+  changes      ChangeLog[]
+  reportEvents ReportEvent[]
+  createdAt    DateTime      @default(now())
 }
 
 enum PlantType {
@@ -37,7 +40,7 @@ enum PlantType {
 }
 
 model Plant {
-  id                String    @id @default(cuid())
+  id                String          @id @default(cuid())
   /// The company's own code for the plant, for example P01.
   code              String
   name              String
@@ -46,10 +49,11 @@ model Plant {
   type              PlantType
   cementCapacityTpa Int
   companyId         String
-  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  dataOwners        User[]    @relation("PlantDataOwners")
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  company           Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  dataOwners        User[]          @relation("PlantDataOwners")
+  reports           MonthlyReport[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@unique([companyId, code])
 }
@@ -69,4 +73,83 @@ model ChangeLog {
   createdAt   DateTime @default(now())
 
   @@index([companyId, entityType, entityId])
+}
+
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  RETURNED
+}
+
+/// One plant's data for one month. Created on the owner's first save, so no row means "not started".
+/// Rules: DECISIONS.md, sections 1 to 5.
+model MonthlyReport {
+  id        String        @id @default(cuid())
+  /// The plant's company, copied here so companyScope works on reports directly.
+  companyId String
+  company   Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plantId   String
+  plant     Plant         @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  /// The month, as "YYYY-MM". Sorts correctly, so a range of months is a plain string comparison.
+  period    String
+  status    ReportStatus  @default(DRAFT)
+  /// Goes up by one on every save and status change. Saves and status changes name the version they
+  /// expect, and fail if it has moved on.
+  version   Int           @default(1)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  lines     ReportLine[]
+  events    ReportEvent[]
+
+  @@unique([plantId, period])
+  @@index([companyId, period])
+  @@index([companyId, status])
+}
+
+/// One item of a month (coal, grid power, clinker and so on): one row per factor that applies to the plant.
+model ReportLine {
+  id                   String        @id @default(cuid())
+  reportId             String
+  report               MonthlyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  /// A key of EMISSION_FACTORS in src/lib/factors.ts.
+  factorKey            String
+  /// As entered. Null means blank, which a draft allows and a submit does not.
+  quantity             Float?
+  /// The unit as entered: a key of UNITS in src/lib/units.ts of the factor's kind (t or kg, L or kL, kWh or MWh).
+  unit                 String
+  /// The quantity converted to the factor's unit.
+  quantityInFactorUnit Float?
+  /// For example "As per bill", or the owner's explanation of a flag.
+  note                 String?
+  /// The factor this line was calculated with, copied at every submit. Null while in draft.
+  factorKgCo2PerUnit   Float?
+  factorUnit           String?
+  factorSource         String?
+
+  @@unique([reportId, factorKey])
+}
+
+/// Every status change of a month: the audit trail.
+model ReportEvent {
+  id         String        @id @default(cuid())
+  companyId  String
+  company    Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  reportId   String
+  report     MonthlyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  /// SUBMIT, APPROVE, RETURN or REOPEN.
+  action     String
+  fromStatus ReportStatus
+  toStatus   ReportStatus
+  /// Required for RETURN and REOPEN; the service checks it.
+  comment    String?
+  /// The report version the action was taken on.
+  version    Int
+  /// The lines, their frozen factors and the Scope 1 and Scope 2 totals at that moment.
+  snapshot   Json
+  actorId    String
+  actor      User          @relation(fields: [actorId], references: [id], onDelete: NoAction)
+  createdAt  DateTime      @default(now())
+
+  @@index([reportId, createdAt])
 }
