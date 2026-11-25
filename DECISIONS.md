@@ -9,6 +9,9 @@ Each entry says what we decided, why, and what we left out. Decided 25 Nov 2026.
 - **Not started** (no record yet) and **Overdue** are worked out, not stored. A month is overdue when it is
   not yet submitted after the 10th of the following month.
 - While a month is Submitted it is locked. The owner cannot pull it back; they ask a reviewer to return it.
+- **Every status change is conditional.** Submit, approve, return and reopen each update the month only
+  where its id, status and version are the ones the user acted on, and fail if no row changed. Two reviewers
+  cannot both act on the same month, and an approval applies to exactly the version that was reviewed.
 
 Why: four states cover every flow in the brief. An "In review" state would stop two reviewers checking the
 same month, but Meera's team is small and it adds a claim/release flow nobody asked for.
@@ -39,6 +42,8 @@ Why: an auditor will ask whether the person who entered a figure also approved i
 - The reviewer sees which lines changed since the last submission.
 - **Factors are frozen:** when a month is submitted, each line keeps a copy of the factor value and source it
   was calculated with. Editing `src/lib/factors.ts` later does not change approved figures.
+- **Frozen again at every submit,** including a resubmit after a return. An approved figure always uses the
+  factors frozen at the submit that was approved.
 - Returning a month needs a comment. Each line has an optional note (for example "As per bill").
 
 Left out: file uploads for evidence such as bills.
@@ -55,6 +60,10 @@ Left out: file uploads for evidence such as bills.
 - **Blank, zero and "doesn't apply":** a draft can have blanks. Submitting needs every line filled; zero is
   allowed. Grinding units have no clinker line, because they buy clinker rather than make it.
 - **Which months:** only months that have ended, from April 2026 (start of FY 2026-27). No negative numbers.
+  A month is written `YYYY-MM` (month 01–12). It has ended once the next month has begun in India time
+  (Asia/Kolkata), since every plant is in India.
+- **Numbers:** stored as floating point, at most 4 decimal places. A typed value of up to 15 significant
+  digits comes back exactly as typed, and totals are shown to 0.1 tCO2.
 - **Who:** only a data owner of the plant can edit its month. If two people save the same draft, the second
   save is rejected (version check) instead of silently overwriting the first.
 
@@ -112,7 +121,7 @@ Small commits, each with tests where they make sense:
 6. API: owner opens, saves and submits a draft
 7. UI: owner's months and entry form
 8. **Deploy to Vercel + Neon.** From here on, redeploy after every feature
-9. API + UI: review queue, approve, return, reopen
+9. API + UI: review queue, approve, return, reopen (with a test of two concurrent approve/return calls)
 10. Anomaly flags
 11. Meera's overview
 12. Sample history in the seed
