@@ -41,6 +41,17 @@ export const saveReportInput = reportKeyInput.extend({
 });
 export type SaveReportInput = z.infer<typeof saveReportInput>;
 
+/** Approve, send back or reopen the month at the version the reviewer looked at. */
+export const reviewInput = reportKeyInput.extend({
+	version: z.number().int().positive(),
+});
+export type ReviewInput = z.infer<typeof reviewInput>;
+
+export const reviewWithCommentInput = reviewInput.extend({
+	comment: z.string().trim().min(1, "Say what needs to change.").max(2000, "Keep the comment under 2,000 characters."),
+});
+export type ReviewWithCommentInput = z.infer<typeof reviewWithCommentInput>;
+
 // Outputs
 
 export const monthStatus = z.enum(["NOT_STARTED", ...REPORT_STATUSES]);
@@ -85,6 +96,9 @@ export const reportView = z.object({
 	isPastDue: z.boolean(),
 	/** Whether this user can change the numbers and submit. */
 	canEdit: z.boolean(),
+	canApprove: z.boolean(),
+	canSendBack: z.boolean(),
+	canReopen: z.boolean(),
 	/** True while totals use the current factor table; false once factors are frozen at submit. */
 	factorsArePreview: z.boolean(),
 	lines: z.array(reportLineView),
@@ -106,3 +120,16 @@ export const ownerPlantMonths = z.object({
 	months: z.array(ownerMonth),
 });
 export type OwnerPlantMonths = z.infer<typeof ownerPlantMonths>;
+
+export const reviewQueueItem = z.object({
+	plant: z.object({ id: z.string(), code: z.string(), name: z.string() }),
+	period: z.string(),
+	submittedByName: z.string(),
+	submittedAt: z.date(),
+	/** True when the month was sent back before and this is a corrected submission. */
+	isResubmission: z.boolean(),
+	/** False when the user owns the plant's data, so someone else must review it. */
+	canReview: z.boolean(),
+	totals: z.object({ scope1Tonnes: z.number(), scope2Tonnes: z.number() }),
+});
+export type ReviewQueueItem = z.infer<typeof reviewQueueItem>;

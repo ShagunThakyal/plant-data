@@ -39,13 +39,13 @@ import { companyScope } from "@/server/helpers/scope";
 
 const plantSelect = { id: true, code: true, name: true, type: true, companyId: true } as const;
 
-type PlantForReport = Prisma.PlantGetPayload<{ select: typeof plantSelect }> & { ownsPlant: boolean };
+export type PlantForReport = Prisma.PlantGetPayload<{ select: typeof plantSelect }> & { ownsPlant: boolean };
 
 /**
  * The plant, loaded through the user's company, with whether the user is one of its data owners. Throws
  * NOT_FOUND when the plant is not in the user's company, or the user may not see its data.
  */
-async function loadPlant(db: Db, user: SessionUser, plantId: string): Promise<PlantForReport> {
+export async function loadPlant(db: Db, user: SessionUser, plantId: string): Promise<PlantForReport> {
 	const plant = await db.plant.findFirst({
 		where: companyScope(user, { id: plantId }),
 		select: { ...plantSelect, dataOwners: { where: { id: user.id }, select: { id: true } } },
@@ -74,6 +74,10 @@ function conflict(message = "This month changed since you opened it. Reload to s
 
 function canEdit(user: SessionUser, plant: PlantForReport, status: MonthStatus): boolean {
 	return plant.ownsPlant && hasRole(user, ROLES.DATA_OWNER) && isEditable(status);
+}
+
+function canTake(action: ReportAction, user: SessionUser, plant: PlantForReport, status: MonthStatus): boolean {
+	return status !== "NOT_STARTED" && checkAction(action, { status, roles: user.roles, ownsPlant: plant.ownsPlant }).ok;
 }
 
 /** Past due applies to months not yet submitted. A sent-back month was submitted on time. */
@@ -179,6 +183,9 @@ export async function getReport(db: Db, user: SessionUser, key: ReportKeyInput, 
 		version: report?.version ?? null,
 		isPastDue: monthIsPastDue(key.period, status, now),
 		canEdit: canEdit(user, plant, status),
+		canApprove: canTake("APPROVE", user, plant, status),
+		canSendBack: canTake("RETURN", user, plant, status),
+		canReopen: canTake("REOPEN", user, plant, status),
 		factorsArePreview: !frozen,
 		lines,
 		totals: totals(lines),
