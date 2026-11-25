@@ -9,3 +9,14 @@ export const REPORTING_TIME_ZONE = "Asia/Kolkata";
 
 /** A month not yet submitted is overdue after this day of the following month. */
 export const DUE_DAY_OF_NEXT_MONTH = 10;
+
+// Anomaly flags: warnings for the owner and the reviewer. They never block a submission. DECISIONS.md, section 6.
+
+/** (a) A line differing from last month's approved value by more than this share is flagged. */
+export const BIG_CHANGE_SHARE = 0.3;
+
+/** (b) Grid power per tonne of clinker outside this range (kWh per tonne), at integrated plants. */
+export const POWER_PER_TONNE_CLINKER_KWH = { min: 50, max: 150 } as const;
+
+/** (b) Clinker in a month above this share of the plant's cement capacity for a month (capacity / 12). */
+export const CLINKER_SHARE_OF_MONTHLY_CAPACITY = 1;
