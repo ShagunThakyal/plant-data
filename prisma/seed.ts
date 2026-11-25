@@ -6,6 +6,8 @@ import type { PlantTypeValue } from "@/lib/schemas/plant";
 import { updatePlant } from "@/server/services/plant";
 import { getSessionUser } from "@/server/services/session";
 
+import { seedReports } from "./seedReports";
+
 const prisma = new PrismaClient();
 
 type SeedPlant = { code: string; name: string; town: string; state: string; type: PlantTypeValue; capacityMt: number };
@@ -198,12 +200,13 @@ async function main() {
 		seeded.push(await seedCompany(seed));
 	}
 	await seedExpansion(seeded[0].id);
+	const months = await seedReports(prisma, seeded[0].id);
 	const [companies, plants, users] = await Promise.all([
 		prisma.company.count(),
 		prisma.plant.count(),
 		prisma.user.count(),
 	]);
-	console.log(`Seeded: ${companies} companies, ${plants} plants, ${users} users.`);
+	console.log(`Seeded: ${companies} companies, ${plants} plants, ${users} users, ${months} new plant months.`);
 }
 
 main()
