@@ -14,7 +14,9 @@
 		"format": "biome check --write .",
 		"test": "vitest run",
 		"db:push": "prisma db push",
-		"db:push:test": "node scripts/db-push-test.mjs",
+		"db:push:test": "node scripts/with-env.mjs .env.test prisma db push --skip-generate",
+		"db:push:prod": "node scripts/with-env.mjs .env.production.local prisma db push --skip-generate",
+		"db:seed:prod": "node scripts/with-env.mjs .env.production.local tsx prisma/seed.ts",
 		"db:seed": "tsx --env-file-if-exists=.env prisma/seed.ts",
 		"db:studio": "prisma studio",
 		"postinstall": "prisma generate"

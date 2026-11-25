@@ -31,6 +31,7 @@ react-hook-form, Tailwind CSS 4 with Radix primitives, Biome and Vitest. Node 22
 | `npm test` | Vitest |
 | `npm run db:push` | Apply `prisma/schema.prisma` to the database |
 | `npm run db:push:test` | Apply `prisma/schema.prisma` to the test database in `.env.test` |
+| `npm run db:push:prod`, `npm run db:seed:prod` | The same, and the seed, for the live database in `.env.production.local` |
 | `npm run db:seed` | Add the sample data (safe to run again) |
 | `npm run db:studio` | Browse the database |
 
@@ -64,10 +65,14 @@ makes Vitest load itself twice and fail with "failed to find the current suite".
 
 ## Deploy
 
-1. Push the repo to GitHub and import it in [Vercel](https://vercel.com).
-2. In the Vercel project, set `DATABASE_URL` (Neon's pooled connection string) and `DIRECT_URL` (the
-   direct one).
-3. From your machine, run `npm run db:push` and `npm run db:seed` against that database.
+1. In [Neon](https://neon.tech), create a project in **AWS Asia Pacific (Singapore)**. `vercel.json` runs the
+   app's server functions in Singapore too, next to the database.
+2. Create `.env.production.local` (git ignores it) with Neon's `DATABASE_URL` (pooled) and `DIRECT_URL`
+   (direct). Keep `.env` pointed at your dev database.
+3. `npm run db:push:prod` creates the tables and `npm run db:seed:prod` adds the sample and demo data. Both
+   print which database they will use before touching it.
+4. Push the repo to GitHub and import it in [Vercel](https://vercel.com). Set `DATABASE_URL` and `DIRECT_URL`
+   for Production, then deploy. Vercel redeploys on every push to `main`.
 
 ## Before you change anything
 
