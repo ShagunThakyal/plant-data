@@ -24,8 +24,9 @@ async function setUp() {
 		createTestUser(company.id, [ROLES.REVIEWER, ROLES.DATA_OWNER], "Reviewer who owns P05"),
 		createTestUser(company.id, [ROLES.SUSTAINABILITY_HEAD], "Head"),
 	]);
-	const plant = await createTestPlant(company.id, { code: "P01" });
-	const ownedByReviewer = await createTestPlant(company.id, { code: "P05" });
+	// Capacity as at P04 Nalgonda, whose October figures LINES uses.
+	const plant = await createTestPlant(company.id, { code: "P01", cementCapacityTpa: 2_500_000 });
+	const ownedByReviewer = await createTestPlant(company.id, { code: "P05", cementCapacityTpa: 2_500_000 });
 	await makeDataOwner(plant.id, owner.id);
 	await makeDataOwner(ownedByReviewer.id, reviewerWhoOwns.id);
 	return { company, owner, reviewer, secondReviewer, reviewerWhoOwns, head, plant, ownedByReviewer };
@@ -204,10 +205,15 @@ describe("reopen", () => {
 });
 
 describe("reviewQueue", () => {
-	it("lists waiting months oldest first, marking a reviewer's own plant as not theirs to review", async () => {
+	it("lists flagged months first, each group oldest first, marking a reviewer's own plant as not theirs", async () => {
 		const queue = await callerFor(fx.reviewerWhoOwns).report.reviewQueue();
-		const times = queue.map((item) => item.submittedAt.getTime());
-		expect(times).toEqual([...times].sort((a, b) => a - b));
+		for (const group of [queue.filter((item) => item.flagCount > 0), queue.filter((item) => item.flagCount === 0)]) {
+			const times = group.map((item) => item.submittedAt.getTime());
+			expect(times).toEqual([...times].sort((a, b) => a - b));
+		}
+		expect(queue.map((item) => item.flagCount > 0)).toEqual(
+			[...queue.map((item) => item.flagCount > 0)].sort((a, b) => Number(b) - Number(a)),
+		);
 		expect(queue.every((item) => (item.plant.code === "P05" ? !item.canReview : item.canReview))).toBe(true);
 	});
 
@@ -240,3 +246,55 @@ describe("overview", () => {
 		await expect(callerFor(fx.owner).report.overview()).rejects.toMatchObject({ code: "FORBIDDEN" });
 	});
 });
+
+describe("flags in context", () => {
+	it("shows the reviewer what changed since the previous submission, and the owner while correcting", async () => {
+		const key = await submitted("2026-06", fx.reviewerWhoOwns, fx.ownedByReviewer.id);
+		const sentBack = await callerFor(fx.reviewer).report.sendBack({ ...key, comment: "Recheck power." });
+
+		const owner = await callerFor(fx.reviewerWhoOwns).report.get(key);
+		expect(owner.flags).toEqual([]); // Nothing changed yet.
+
+		const corrected = LINES.map((line) => (line.factorKey === "grid_power" ? { ...line, quantity: 13_100_000 } : line));
+		const resubmitted = await callerFor(fx.reviewerWhoOwns).report.submit({
+			...key,
+			version: sentBack.version,
+			lines: corrected,
+		});
+		const reviewerView = await callerFor(fx.reviewer).report.get(key);
+		expect(reviewerView.flags).toEqual([
+			expect.objectContaining({ kind: "CHANGED_SINCE_SUBMISSION", factorKey: "grid_power" }),
+		]);
+		expect(resubmitted.flags.map((flag) => flag.kind)).toEqual(["CHANGED_SINCE_SUBMISSION"]);
+	});
+
+	it("compares with last month's approved values, and lists flagged months first in the queue", async () => {
+		// P05 April was approved in the reopen test and is back with its owner; approve a fresh pair instead.
+		const plant = await createTestPlant(fx.company.id, { code: "P09", cementCapacityTpa: 2_500_000 });
+		await makeDataOwner(plant.id, fx.owner.id);
+		const april = await submitted("2026-04", fx.owner, plant.id);
+		await callerFor(fx.reviewer).report.approve(april);
+
+		const copied = await submitted("2026-05", fx.owner, plant.id);
+		const view = await callerFor(fx.reviewer).report.get(copied);
+		// Every non-zero line equals April's; furnace oil is 0 both months and is not flagged.
+		expect(view.flags.map((flag) => `${flag.kind}:${flag.factorKey}`).sort()).toEqual(
+			["clinker", "coal", "diesel", "grid_power", "petcoke"].map((key) => `SAME_AS_LAST_MONTH:${key}`).sort(),
+		);
+		expect(lineOf(view, "coal").reference).toEqual({ quantity: 11_000, unit: "t", quantityInFactorUnit: 11_000 });
+
+		const queue = await callerFor(fx.reviewer).report.reviewQueue();
+		const firstUnflagged = queue.findIndex((item) => item.flagCount === 0);
+		const lastFlagged = queue.map((item) => item.flagCount > 0).lastIndexOf(true);
+		expect(firstUnflagged === -1 || lastFlagged < firstUnflagged).toBe(true);
+		expect(queue.find((item) => item.plant.code === "P09")?.flagCount).toBe(5);
+	});
+});
+
+function lineOf<L extends { factorKey: string }>(view: { lines: L[] }, key: string): L {
+	const line = view.lines.find((candidate) => candidate.factorKey === key);
+	if (!line) {
+		throw new Error(`No ${key} line`);
+	}
+	return line;
+}

@@ -12,6 +12,7 @@ import {
 	unitLabel,
 } from "@/lib/emissions";
 import { EMISSION_FACTORS } from "@/lib/factors";
+import { computeFlags, toFlagLines } from "@/lib/flags";
 import { isPastDue, previousPeriod, reportablePeriods } from "@/lib/period";
 import {
 	EDITABLE_STATUSES,
@@ -37,7 +38,7 @@ import { companyScope } from "@/server/helpers/scope";
 
 // Monthly reports: the owner's side (open, save, submit). Rules: DECISIONS.md.
 
-const plantSelect = { id: true, code: true, name: true, type: true, companyId: true } as const;
+const plantSelect = { id: true, code: true, name: true, type: true, companyId: true, cementCapacityTpa: true } as const;
 
 export type PlantForReport = Prisma.PlantGetPayload<{ select: typeof plantSelect }> & { ownsPlant: boolean };
 
@@ -100,6 +101,44 @@ function toEventView(event: ReportWithDetail["events"][number]): ReportEventView
 
 type StoredLine = ReportWithDetail["lines"][number];
 
+/** A line's value at some earlier point: last month's approval, or a previous submission. */
+export type ComparedLine = { quantity: number | null; unit: string; quantityInFactorUnit: number | null };
+
+function numberOrNull(value: unknown): number | null {
+	return typeof value === "number" ? value : null;
+}
+
+/** The lines recorded in a status change's snapshot, by factor. */
+export function snapshotLines(snapshot: unknown): Map<string, ComparedLine> {
+	const lines = (snapshot as { lines?: unknown } | null)?.lines;
+	if (!Array.isArray(lines)) {
+		return new Map();
+	}
+	const result = new Map<string, ComparedLine>();
+	for (const line of lines as Record<string, unknown>[]) {
+		if (typeof line?.factorKey === "string") {
+			result.set(line.factorKey, {
+				quantity: numberOrNull(line.quantity),
+				unit: typeof line.unit === "string" ? line.unit : "",
+				quantityInFactorUnit: numberOrNull(line.quantityInFactorUnit),
+			});
+		}
+	}
+	return result;
+}
+
+/**
+ * The submission to compare with (flag e). While the owner corrects a month, their last submission. Once it is
+ * submitted again, the submission before the one under review.
+ */
+export function previousSubmission(
+	status: MonthStatus,
+	submitSnapshotsOldestFirst: unknown[],
+): Map<string, ComparedLine> {
+	const index = submitSnapshotsOldestFirst.length - (isEditable(status) ? 1 : 2);
+	return index >= 0 ? snapshotLines(submitSnapshotsOldestFirst[index]) : new Map();
+}
+
 /**
  * The lines to show. A month the owner can still change shows one line per applicable factor, blank where
  * none is stored yet (so a factor added later appears), priced with the current factors. A submitted or
@@ -109,7 +148,8 @@ function buildLines(
 	plantType: PlantForReport["type"],
 	stored: StoredLine[],
 	frozen: boolean,
-	reference: Map<string, StoredLine>,
+	reference: Map<string, ComparedLine>,
+	submitted: Map<string, ComparedLine>,
 ): ReportLineView[] {
 	const byKey = new Map(stored.map((line) => [line.factorKey, line]));
 	const keys = frozen
@@ -138,13 +178,18 @@ function buildLines(
 			kgCo2PerUnit,
 			factorSource: frozen ? (line?.factorSource ?? null) : (factor?.source ?? null),
 			tonnesCo2: lineTonnesCo2({ quantityInFactorUnit, kgCo2PerUnit, scope }),
-			reference: previous ? { quantity: previous.quantity, unit: previous.unit } : null,
+			reference: previous ?? null,
+			previousSubmission: submitted.get(key) ?? null,
 		};
 	});
 }
 
 /** Last month's approved lines by factor, or an empty map if last month is not approved. */
-async function approvedLinesOfPreviousMonth(db: Db, plantId: string, period: string): Promise<Map<string, StoredLine>> {
+async function approvedLinesOfPreviousMonth(
+	db: Db,
+	plantId: string,
+	period: string,
+): Promise<Map<string, ComparedLine>> {
 	const previous = await db.monthlyReport.findUnique({
 		where: { plantId_period: { plantId, period: previousPeriod(period) } },
 		select: { status: true, lines: true },
@@ -168,6 +213,10 @@ export async function getReport(db: Db, user: SessionUser, key: ReportKeyInput, 
 		report?.lines ?? [],
 		frozen,
 		await approvedLinesOfPreviousMonth(db, plant.id, key.period),
+		previousSubmission(
+			status,
+			(report?.events ?? []).filter((event) => event.action === "SUBMIT").map((event) => event.snapshot),
+		),
 	);
 	const events = (report?.events ?? []).map(toEventView);
 	const lastEvent = events.at(-1);
@@ -177,7 +226,13 @@ export async function getReport(db: Db, user: SessionUser, key: ReportKeyInput, 
 			: null;
 
 	return {
-		plant: { id: plant.id, code: plant.code, name: plant.name, type: plant.type },
+		plant: {
+			id: plant.id,
+			code: plant.code,
+			name: plant.name,
+			type: plant.type,
+			cementCapacityTpa: plant.cementCapacityTpa,
+		},
 		period: key.period,
 		status,
 		version: report?.version ?? null,
@@ -189,6 +244,11 @@ export async function getReport(db: Db, user: SessionUser, key: ReportKeyInput, 
 		factorsArePreview: !frozen,
 		lines,
 		totals: totals(lines),
+		flags: computeFlags({
+			plantType: plant.type,
+			cementCapacityTpa: plant.cementCapacityTpa,
+			lines: toFlagLines(lines),
+		}),
 		returnComment,
 		history: events,
 	};

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { FLAG_KINDS } from "@/lib/flags";
 import { reportablePeriodSchema } from "@/lib/period";
 import { REPORT_ACTIONS, REPORT_STATUSES } from "@/lib/reportStatus";
 import { PLANT_TYPES } from "@/lib/schemas/plant";
@@ -58,6 +59,15 @@ export const monthStatus = z.enum(["NOT_STARTED", ...REPORT_STATUSES]);
 
 export const unitOption = z.object({ value: z.string(), label: z.string() });
 
+const comparedValue = z.object({
+	quantity: z.number().nullable(),
+	unit: z.string(),
+	quantityInFactorUnit: z.number().nullable(),
+});
+
+export const flagView = z.object({ kind: z.enum(FLAG_KINDS), factorKey: z.string().nullable(), message: z.string() });
+export type FlagView = z.infer<typeof flagView>;
+
 export const reportLineView = z.object({
 	factorKey: z.string(),
 	label: z.string(),
@@ -71,8 +81,10 @@ export const reportLineView = z.object({
 	kgCo2PerUnit: z.number().nullable(),
 	factorSource: z.string().nullable(),
 	tonnesCo2: z.number().nullable(),
-	/** Last month's approved value, as entered, if last month was approved. */
-	reference: z.object({ quantity: z.number().nullable(), unit: z.string() }).nullable(),
+	/** Last month's approved value, if last month was approved. */
+	reference: comparedValue.nullable(),
+	/** This line at the previous submission of this month, if there was one. */
+	previousSubmission: comparedValue.nullable(),
 });
 export type ReportLineView = z.infer<typeof reportLineView>;
 
@@ -89,7 +101,13 @@ export const reportEventView = z.object({
 export type ReportEventView = z.infer<typeof reportEventView>;
 
 export const reportView = z.object({
-	plant: z.object({ id: z.string(), code: z.string(), name: z.string(), type: z.enum(PLANT_TYPES) }),
+	plant: z.object({
+		id: z.string(),
+		code: z.string(),
+		name: z.string(),
+		type: z.enum(PLANT_TYPES),
+		cementCapacityTpa: z.number(),
+	}),
 	period: z.string(),
 	status: monthStatus,
 	version: z.number().nullable(),
@@ -103,6 +121,8 @@ export const reportView = z.object({
 	factorsArePreview: z.boolean(),
 	lines: z.array(reportLineView),
 	totals: z.object({ scope1Tonnes: z.number(), scope2Tonnes: z.number() }),
+	/** Figures worth a reviewer's look. Warnings only. */
+	flags: z.array(flagView),
 	/** The latest "sent back" or "reopened" comment, while the month is back with its owner. */
 	returnComment: reportEventView.nullable(),
 	history: z.array(reportEventView),
@@ -130,6 +150,7 @@ export const reviewQueueItem = z.object({
 	isResubmission: z.boolean(),
 	/** False when the user owns the plant's data, so someone else must review it. */
 	canReview: z.boolean(),
+	flagCount: z.number(),
 	totals: z.object({ scope1Tonnes: z.number(), scope2Tonnes: z.number() }),
 });
 export type ReviewQueueItem = z.infer<typeof reviewQueueItem>;

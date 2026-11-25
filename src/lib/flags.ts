@@ -45,6 +45,24 @@ function label(factorKey: string): string {
 	return findFactor(factorKey)?.label ?? factorKey;
 }
 
+/** A line as the month view has it: its value and the two values it is compared with, as entered and converted. */
+type ComparedValue = { quantityInFactorUnit: number | null } | null;
+export type LineWithComparisons = {
+	factorKey: string;
+	quantityInFactorUnit: number | null;
+	reference: ComparedValue;
+	previousSubmission: ComparedValue;
+};
+
+export function toFlagLines(lines: readonly LineWithComparisons[]): FlagLine[] {
+	return lines.map((line) => ({
+		factorKey: line.factorKey,
+		value: line.quantityInFactorUnit,
+		lastApproved: line.reference?.quantityInFactorUnit ?? null,
+		previousSubmission: line.previousSubmission?.quantityInFactorUnit ?? null,
+	}));
+}
+
 /** Every flag for a month. A line that is blank or missing is simply not checked. */
 export function computeFlags({ plantType, cementCapacityTpa, lines }: FlagInput): Flag[] {
 	const flags: Flag[] = [];

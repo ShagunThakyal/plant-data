@@ -257,7 +257,11 @@ describe("last month's approved value", () => {
 	it("is shown beside each line when last month was approved, and not otherwise", async () => {
 		// 2026-06 of the other plant was approved above; 2026-07 shows its values.
 		const view = await callerFor(fx.otherOwner).report.get({ plantId: fx.otherPlant.id, period: "2026-07" });
-		expect(lineOf(view, "grid_power").reference).toEqual({ quantity: 4_500_000, unit: "kWh" });
+		expect(lineOf(view, "grid_power").reference).toEqual({
+			quantity: 4_500_000,
+			unit: "kWh",
+			quantityInFactorUnit: 4_500,
+		});
 
 		// P01's April 2026 was never started, so May has nothing to compare with.
 		const noReference = await callerFor(fx.owner).report.get({ plantId: fx.plant.id, period: "2026-05" });
