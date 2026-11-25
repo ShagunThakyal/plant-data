@@ -12,6 +12,8 @@ Each entry says what we decided, why, and what we left out. Decided 25 Nov 2026.
 - **Every status change is conditional.** Submit, approve, return and reopen each update the month only
   where its id, status and version are the ones the user acted on, and fail if no row changed. Two reviewers
   cannot both act on the same month, and an approval applies to exactly the version that was reviewed.
+- **Overdue** applies to Not started and Draft only. A month that was sent back was submitted on time, and the
+  delay since is partly the reviewer's.
 
 Why: four states cover every flow in the brief. An "In review" state would stop two reviewers checking the
 same month, but Meera's team is small and it adds a claim/release flow nobody asked for.
