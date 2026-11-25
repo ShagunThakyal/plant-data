@@ -38,6 +38,11 @@ export function createTestPlant(
 	});
 }
 
+/** Makes the user one of the plant's data owners. */
+export function makeDataOwner(plantId: string, userId: string) {
+	return prisma.plant.update({ where: { id: plantId }, data: { dataOwners: { connect: { id: userId } } } });
+}
+
 /** Calls the API as this user, without HTTP. */
 export function callerFor(user: { id: string }) {
 	return appRouter.createCaller(createInnerContext({ userId: user.id }));
