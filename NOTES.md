@@ -52,6 +52,12 @@ What caught it: making the new test fail on purpose before trusting that it pass
 failure output instead of just the pass/fail count, and then asking what else that shared `.env` could be
 pointing at.
 
+**A deliberate break that was not undone.** To prove the time-zone tests work, the AI set the reporting time
+zone to UTC, saw the three expected failures, then ran `git checkout` on the file to restore it. The file
+was new and not yet tracked, so `git checkout` did nothing and the file still said UTC. It was caught by
+reading `git status` (the file showed as untracked, not unmodified) before committing, then checking the
+line itself. Lesson: after breaking code on purpose, confirm the restore, not just the failure.
+
 ## Local setup quirks
 
 **Vitest on Windows.** When the terminal's path starts with lowercase `c:\` (VS Code's default here), Vitest
