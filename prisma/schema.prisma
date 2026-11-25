@@ -56,6 +56,8 @@ model Plant {
   updatedAt         DateTime        @updatedAt
 
   @@unique([companyId, code])
+  /// Lets a report point at its plant and the plant's company together, so the two cannot disagree.
+  @@unique([id, companyId])
 }
 
 /// Who changed what, and when. Written by recordChange in src/server/helpers/changeLog.ts.
@@ -86,11 +88,12 @@ enum ReportStatus {
 /// Rules: DECISIONS.md, sections 1 to 5.
 model MonthlyReport {
   id        String        @id @default(cuid())
-  /// The plant's company, copied here so companyScope works on reports directly.
+  /// The plant's company, copied here so companyScope works on reports directly. Set only from the plant row
+  /// loaded through the user's company, and the database checks it matches the plant (see `plant`).
   companyId String
   company   Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   plantId   String
-  plant     Plant         @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  plant     Plant         @relation(fields: [plantId, companyId], references: [id, companyId], onDelete: Cascade)
   /// The month, as "YYYY-MM". Sorts correctly, so a range of months is a plain string comparison.
   period    String
   status    ReportStatus  @default(DRAFT)
