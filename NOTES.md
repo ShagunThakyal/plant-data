@@ -27,16 +27,30 @@ safely share it with local development, because each test creates its own compan
 afterwards. The starter's README had advised a separate database; the AI argued that advice was only about
 the live site.
 
-The evidence said otherwise. To prove the `plant.list` test catches the bug, we ran it against the old code.
-The failing query returned **13 plants: the 11 seeded ones plus the 2 test fixtures**. The fixtures were
-cleaned up, but the seed data was visible to every test. Any test that counts rows (for example "the review
-queue has one month in it") would depend on whatever happened to be seeded or left over from dev work.
+**The real risk: tests writing to production.** Tests read `DATABASE_URL` from `.env`, and `.env` is the
+file you point at whatever database you are working on. Once the app is deployed, it is easy for `.env` to
+hold the live Neon URL (to run `db:push` or `db:seed` against production, for example). A plain `npm test`
+would then create and delete rows in the live database:
 
-Fix, in `e48921a`: tests read `.env.test` and run against their own database, with no fallback to `.env`.
-We checked it by counting rows after a run: 11 plants in the dev database, 0 in the test database.
+- Test companies and users would appear on the live site while tests run. `session.users` lists every user
+  in every company, so they would show up on the public sign-in page.
+- A test that fails or is interrupted before its clean-up leaves its rows there for good.
+- Each test deletes only its own company today, but one wrong `where` in a future clean-up would delete
+  real, approved data that the auditor relies on.
 
-What caught it: making the new test fail on purpose before trusting that it passed, and reading the actual
-failure output instead of just the pass/fail count.
+**The symptom that made us look.** To prove the `plant.list` test catches the bug, we ran it against the old
+code. The failing query returned **13 plants: the 11 seeded ones plus the 2 test fixtures**. The fixtures
+were cleaned up, but seed data was visible to every test, so any test that counts rows (for example "the
+review queue has one month in it") would depend on whatever happened to be in the database. That showed
+tests and other data were not separated. The production risk above is why it matters.
+
+Fix, in `e48921a`: tests read `.env.test` only, never `.env`, and with no fallback. A missing `.env.test`
+stops the run instead of quietly using whatever `.env` points at. We checked it by counting rows after a
+run: 11 plants in the dev database, 0 in the test database.
+
+What caught it: making the new test fail on purpose before trusting that it passed, reading the actual
+failure output instead of just the pass/fail count, and then asking what else that shared `.env` could be
+pointing at.
 
 ## Local setup quirks
 
