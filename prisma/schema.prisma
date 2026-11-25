@@ -129,6 +129,8 @@ model ReportLine {
   factorKgCo2PerUnit   Float?
   factorUnit           String?
   factorSource         String?
+  /// 1 or 2.
+  factorScope          Int?
 
   @@unique([reportId, factorKey])
 }
