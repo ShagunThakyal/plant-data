@@ -3,8 +3,9 @@ import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
 import { defineConfig } from "vitest/config";
 
-// Values already in the environment win over `.env`, so CI and other tools can set their own.
-const envFile = fileURLToPath(new URL(".env", import.meta.url));
+// Tests read `.env.test`, never `.env`: they get a database of their own, so seed data and dev work
+// cannot change what they see. Values already in the environment win, so CI can set its own.
+const envFile = fileURLToPath(new URL(".env.test", import.meta.url));
 const fileEnv = existsSync(envFile) ? parseEnv(readFileSync(envFile, "utf8")) : {};
 const env = Object.fromEntries(
 	Object.entries(fileEnv).filter(([key, value]) => process.env[key] === undefined && value !== undefined),

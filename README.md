@@ -30,13 +30,22 @@ react-hook-form, Tailwind CSS 4 with Radix primitives, Biome and Vitest. Node 22
 | `npm run format` | Biome: fix what it can |
 | `npm test` | Vitest |
 | `npm run db:push` | Apply `prisma/schema.prisma` to the database |
+| `npm run db:push:test` | Apply `prisma/schema.prisma` to the test database in `.env.test` |
 | `npm run db:seed` | Add the sample data (safe to run again) |
 | `npm run db:studio` | Browse the database |
 
 ## Tests
 
-`npm test` runs against `DATABASE_URL`. The tests create and delete their own rows, so point them at a
-database (or Neon branch) that your live site does not use. Run `npm run db:push` on it first.
+`npm test` reads `DATABASE_URL` from `.env.test`, not `.env`, so tests never share the database you develop
+on or the live one. The tests create and delete their own rows.
+
+1. Create `.env.test` with `DATABASE_URL` and `DIRECT_URL` for the test database. With the Docker database:
+   `postgresql://postgres:postgres@localhost:5433/plant_data_test` for both.
+2. `npm run db:push:test` creates the tables there (and the database, if it does not exist).
+3. `npm test`.
+
+On Windows, run the tests from a terminal whose path starts with `C:\`, not `c:\`. A lowercase drive letter
+makes Vitest load itself twice and fail with "failed to find the current suite".
 
 ## Where things are
 
