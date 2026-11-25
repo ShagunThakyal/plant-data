@@ -72,10 +72,11 @@ explanation; the reviewer sees them with that explanation. The review queue list
 | b. Clinker above capacity | Monthly clinker is more than the plant's cement capacity ÷ 12 |
 | b. Power per tonne of clinker | Integrated plants only: grid power outside 50–150 kWh per tonne of clinker |
 | c. Unexpected zero | A line is zero where the plant type expects a value (for example clinker at an integrated plant) |
-| d. Same as last month | A line is exactly equal to the last approved month's value |
+| d. Same as last month | A line is exactly equal to the last approved month's value. Skipped when both are 0, so fuels a plant does not use do not trigger it |
 | e. Changed since last submission | On a resubmitted month, lines that changed are highlighted for the reviewer |
 
-The thresholds are a starting point. They live in one place in the code so they are easy to tune.
+The thresholds are a starting point. Every threshold (and the overdue day and first reportable month in
+sections 1 and 5) lives in one constants file, so they are easy to find and tune.
 
 ## 7. Meera's view
 
