@@ -9,6 +9,7 @@ import { ReportHistory } from "@/components/reports/ReportHistory";
 import { ReadOnlyLinesTable } from "@/components/reports/ReportLinesTable";
 import { ReportStatusCallout } from "@/components/reports/ReportStatusCallout";
 import { ReportTotals } from "@/components/reports/ReportTotals";
+import { ReviewActions } from "@/components/reports/ReviewActions";
 import { OrenButton } from "@/components/ui/OrenButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -21,13 +22,15 @@ import {
 import { PageHeader, PageHeaderDescription, PageHeaderHeading, PageHeaderRow } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PERIOD_PATTERN, formatPeriod } from "@/lib/period";
-import { ROLES, hasRole } from "@/lib/roles";
+import { homePathFor } from "@/lib/users";
 import { api } from "@/utils/api";
 
-function BackLink() {
+const BACK_LABELS: Record<string, string> = { "/review": "Review", "/months": "My months", "/plants": "Plants" };
+
+/** Back to where this user works: the review queue, their months, or the plant list. */
+function BackLink({ ownsMonth }: { ownsMonth: boolean }) {
 	const me = api.session.me.useQuery();
-	const isOwner = me.data ? hasRole(me.data, ROLES.DATA_OWNER) : true;
-	const href = isOwner ? "/months" : "/plants";
+	const href = ownsMonth ? "/months" : me.data ? homePathFor(me.data) : "/plants";
 	return (
 		<Link
 			href={href}
@@ -35,7 +38,7 @@ function BackLink() {
 			data-testid="report-back"
 		>
 			<ArrowLeft className="size-4" aria-hidden />
-			{isOwner ? "My months" : "Plants"}
+			{BACK_LABELS[href] ?? "Back"}
 		</Link>
 	);
 }
@@ -100,7 +103,7 @@ export default function ReportPage() {
 	const data = report.data;
 	return (
 		<AppLayout title={`${data.plant.code} · ${formatPeriod(data.period)}`}>
-			<BackLink />
+			<BackLink ownsMonth={data.canEdit} />
 			<PageHeader bordered>
 				<PageHeaderRow>
 					<div className="flex flex-col gap-1">
@@ -130,6 +133,7 @@ export default function ReportPage() {
 									: "Worked out with the emission factors fixed when the month was submitted."
 							}
 						/>
+						<ReviewActions report={data} />
 					</>
 				)}
 

@@ -1,13 +1,16 @@
 import { ROLES, hasRole, roleLabels } from "@/lib/roles";
+import type { SwitcherUser } from "@/lib/schemas/session";
 
 /** Where a user starts after signing in: their main job. */
 export function homePathFor(user: { roles: readonly string[] }): string {
+	if (hasRole(user, ROLES.REVIEWER)) {
+		return "/review";
+	}
 	if (hasRole(user, ROLES.DATA_OWNER)) {
 		return "/months";
 	}
 	return "/plants";
 }
-import type { SwitcherUser } from "@/lib/schemas/session";
 
 /** "Plant data owner · P01 Nimbus Chittorgarh Works" */
 export function describeUser(user: SwitcherUser): string {
