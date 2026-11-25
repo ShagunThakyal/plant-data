@@ -13,6 +13,9 @@ react-hook-form, Tailwind CSS 4 with Radix primitives, Biome and Vitest. Node 22
 1. `npm install`
 2. Copy `.env.example` to `.env` and set `DATABASE_URL` and `DIRECT_URL`. A free [Neon](https://neon.tech)
    database works. With a local Postgres, both can be the same address.
+
+   For a local Postgres in Docker, run `docker compose up -d` and set both to
+   `postgresql://postgres:postgres@localhost:5433/plant_data`.
 3. `npm run db:push` creates the tables. `npm run db:seed` adds the sample companies, plants and users.
 4. `npm run dev`, then open http://localhost:3000 and choose a sample user. Switch user from the top bar.
 

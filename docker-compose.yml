@@ -1,0 +1,21 @@
+# Local Postgres for development and tests. Throwaway credentials, reachable only from this machine.
+# Start: docker compose up -d   Stop: docker compose down   Wipe data: docker compose down -v
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: plant_data
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - plant-data-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d plant_data"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  plant-data-db:
