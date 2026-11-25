@@ -88,3 +88,32 @@ export function formatPeriod(period: string): string {
 	const [year, month] = period.split("-").map(Number);
 	return `${MONTH_NAMES[month - 1]} ${year}`;
 }
+
+// Financial years run April to March: FY 2026-27 is 2026-04 to 2027-03.
+
+/** The year the financial year containing this month starts in: 2026 for both 2026-10 and 2027-02. */
+export function financialYearStart(period: string): number {
+	const [year, month] = period.split("-").map(Number);
+	return month >= 4 ? year : year - 1;
+}
+
+/** "FY 2026-27" */
+export function financialYearLabel(startYear: number): string {
+	return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+}
+
+/** The twelve months of a financial year, April first. */
+export function financialYearPeriods(startYear: number): string[] {
+	return Array.from({ length: 12 }, (_, index) => shiftPeriod(`${startYear}-04`, index));
+}
+
+/** 1 for April to June, through 4 for January to March. */
+export function financialQuarter(period: string): 1 | 2 | 3 | 4 {
+	const [, month] = period.split("-").map(Number);
+	return (Math.floor(((month + 8) % 12) / 3) + 1) as 1 | 2 | 3 | 4;
+}
+
+/** "Oct", for column headings. */
+export function shortMonth(period: string): string {
+	return formatPeriod(period).slice(0, 3);
+}

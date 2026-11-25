@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
 	currentPeriod,
 	dueDate,
+	financialQuarter,
+	financialYearLabel,
+	financialYearPeriods,
+	financialYearStart,
 	formatPeriod,
 	isPastDue,
 	isReportablePeriod,
@@ -97,5 +101,24 @@ describe("formatPeriod", () => {
 	it("writes the month in words", () => {
 		expect(formatPeriod("2026-10")).toBe("October 2026");
 		expect(formatPeriod("2027-01")).toBe("January 2027");
+	});
+});
+
+describe("financial years", () => {
+	it("run April to March", () => {
+		expect(financialYearStart("2026-04")).toBe(2026);
+		expect(financialYearStart("2027-03")).toBe(2026);
+		expect(financialYearStart("2026-03")).toBe(2025);
+		expect(financialYearLabel(2026)).toBe("FY 2026-27");
+		expect(financialYearLabel(2099)).toBe("FY 2099-00");
+		const periods = financialYearPeriods(2026);
+		expect(periods).toHaveLength(12);
+		expect([periods[0], periods[11]]).toEqual(["2026-04", "2027-03"]);
+	});
+
+	it("have quarters starting in April, July, October and January", () => {
+		expect(
+			["2026-04", "2026-06", "2026-07", "2026-09", "2026-10", "2026-12", "2027-01", "2027-03"].map(financialQuarter),
+		).toEqual([1, 1, 2, 2, 3, 3, 4, 4]);
 	});
 });
