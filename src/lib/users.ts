@@ -6,6 +6,9 @@ export function homePathFor(user: { roles: readonly string[] }): string {
 	if (hasRole(user, ROLES.REVIEWER)) {
 		return "/review";
 	}
+	if (hasRole(user, ROLES.SUSTAINABILITY_HEAD)) {
+		return "/overview";
+	}
 	if (hasRole(user, ROLES.DATA_OWNER)) {
 		return "/months";
 	}

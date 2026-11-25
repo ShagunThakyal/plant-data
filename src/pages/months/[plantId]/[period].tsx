@@ -25,7 +25,12 @@ import { PERIOD_PATTERN, formatPeriod } from "@/lib/period";
 import { homePathFor } from "@/lib/users";
 import { api } from "@/utils/api";
 
-const BACK_LABELS: Record<string, string> = { "/review": "Review", "/months": "My months", "/plants": "Plants" };
+const BACK_LABELS: Record<string, string> = {
+	"/overview": "Overview",
+	"/review": "Review",
+	"/months": "My months",
+	"/plants": "Plants",
+};
 
 /** Back to where this user works: the review queue, their months, or the plant list. */
 function BackLink({ ownsMonth }: { ownsMonth: boolean }) {
