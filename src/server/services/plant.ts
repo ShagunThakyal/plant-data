@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 import type { PlantDetail, PlantSummary, PlantUpdateInput } from "@/lib/schemas/plant";
 import type { SessionUser } from "@/lib/schemas/session";
@@ -17,26 +17,24 @@ const plantSummarySelect = {
 } as const;
 
 export type PlantFilters = {
-	companyId?: string;
 	search?: string;
 };
 
-export async function listPlants(db: Db, filters: PlantFilters): Promise<PlantSummary[]> {
+/** The plants of the user's company, optionally filtered by a search term. */
+export async function listPlants(db: Db, user: SessionUser, filters: PlantFilters): Promise<PlantSummary[]> {
 	const search = filters.search?.trim();
+	const matchesSearch: Prisma.PlantWhereInput = search
+		? {
+				OR: [
+					{ name: { contains: search, mode: "insensitive" } },
+					{ code: { contains: search, mode: "insensitive" } },
+					{ town: { contains: search, mode: "insensitive" } },
+					{ state: { contains: search, mode: "insensitive" } },
+				],
+			}
+		: {};
 	return db.plant.findMany({
-		where: {
-			companyId: filters.companyId,
-			...(search
-				? {
-						OR: [
-							{ name: { contains: search, mode: "insensitive" } },
-							{ code: { contains: search, mode: "insensitive" } },
-							{ town: { contains: search, mode: "insensitive" } },
-							{ state: { contains: search, mode: "insensitive" } },
-						],
-					}
-				: {}),
-		},
+		where: companyScope(user, matchesSearch),
 		orderBy: [{ code: "asc" }, { createdAt: "asc" }],
 		select: plantSummarySelect,
 	});
