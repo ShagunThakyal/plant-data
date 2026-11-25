@@ -1,3 +1,4 @@
+import { overviewOutput } from "@/lib/schemas/overview";
 import {
 	ownerPlantMonths,
 	reportKeyInput,
@@ -8,6 +9,7 @@ import {
 	saveReportInput,
 } from "@/lib/schemas/report";
 import { protectedProcedure, router } from "@/server/api/trpc";
+import { getOverview } from "@/server/services/overview";
 import { getReport, listOwnerMonths, saveDraft, submitReport } from "@/server/services/report";
 import { listReviewQueue, review } from "@/server/services/review";
 
@@ -42,6 +44,9 @@ export const reportRouter = router({
 		.input(reviewWithCommentInput)
 		.output(reportView)
 		.mutation(({ ctx, input }) => review(ctx.db, ctx.user, "RETURN", input)),
+
+	/** The company picture for the financial year: approved figures only. */
+	overview: protectedProcedure.output(overviewOutput).query(({ ctx }) => getOverview(ctx.db, ctx.user)),
 
 	reopen: protectedProcedure
 		.input(reviewWithCommentInput)

@@ -216,3 +216,27 @@ describe("reviewQueue", () => {
 		expect(Array.isArray(await callerFor(fx.head).report.reviewQueue())).toBe(true);
 	});
 });
+
+describe("overview", () => {
+	it("counts only approved months, and only the user's company", async () => {
+		const overview = await callerFor(fx.head).report.overview();
+		const p01 = overview.plants.find((row) => row.plant.code === "P01");
+		const approvedPeriods = p01?.months.filter((month) => month.approved).map((month) => month.period);
+		// Exactly the months the tests above approved, whichever way the race went.
+		const stored = await prisma.monthlyReport.findMany({
+			where: { plantId: fx.plant.id, status: "APPROVED" },
+			select: { period: true },
+		});
+		expect(approvedPeriods?.sort()).toEqual(stored.map((report) => report.period).sort());
+		expect(overview.plants.map((row) => row.plant.code)).toEqual(["P01", "P05"]);
+		// P01 September is waiting for review, so it shows but adds nothing.
+		expect(p01?.months.find((month) => month.period === "2026-09")).toMatchObject({
+			status: "SUBMITTED",
+			approved: null,
+		});
+	});
+
+	it("is not for data owners", async () => {
+		await expect(callerFor(fx.owner).report.overview()).rejects.toMatchObject({ code: "FORBIDDEN" });
+	});
+});
