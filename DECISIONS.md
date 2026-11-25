@@ -64,6 +64,9 @@ Left out: file uploads for evidence such as bills.
   (Asia/Kolkata), since every plant is in India.
 - **Numbers:** stored as floating point, at most 4 decimal places. A typed value of up to 15 significant
   digits comes back exactly as typed, and totals are shown to 0.1 tCO2.
+- **New factors later:** opening an old draft or returned month shows a blank line for any applicable factor it
+  is missing, and saving adds it; it must be filled before submit. Approved months stay as they are. Code that
+  reads lines (totals, flags) treats a missing line as "not reported", never as an error.
 - **Who:** only a data owner of the plant can edit its month. If two people save the same draft, the second
   save is rejected (version check) instead of silently overwriting the first.
 
@@ -83,6 +86,8 @@ explanation; the reviewer sees them with that explanation. The review queue list
 | c. Unexpected zero | A line is zero where the plant type expects a value (for example clinker at an integrated plant) |
 | d. Same as last month | A line is exactly equal to the last approved month's value. Skipped when both are 0, so fuels a plant does not use do not trigger it |
 | e. Changed since last submission | On a resubmitted month, lines that changed are highlighted for the reviewer |
+
+If time runs short, flags (b) and (c) can be cut; (a), (d) and (e) stay.
 
 The thresholds are a starting point. Every threshold (and the overdue day and first reportable month in
 sections 1 and 5) lives in one constants file, so they are easy to find and tune.
@@ -104,6 +109,8 @@ Left out: intensity figures (CO2 per tonne of cement), because plants do not rep
 - Reviewers and the Head of Sustainability see every plant in their company.
 - No assigning months to particular reviewers.
 - Everyone sees only their own company's data.
+- A report's company is set only from the plant row loaded through the user's company, never from input. The
+  database enforces it too: a report points at its plant by (plant id, company id).
 
 ## 9. Existing bug
 
@@ -111,19 +118,16 @@ Left out: intensity figures (CO2 per tonne of cement), because plants do not rep
 
 ## Build order
 
-Small commits, each with tests where they make sense:
+Small commits, each with tests where they make sense. Done so far: this file, the `plant.list` fix, the
+schema, periods. Then:
 
-1. This file
-2. Fix `plant.list` company scoping
-3. Schema: monthly report, lines, events
-4. Emissions calculation
-5. Status rules (which role can move a month to which state)
-6. API: owner opens, saves and submits a draft
-7. UI: owner's months and entry form
-8. **Deploy to Vercel + Neon.** From here on, redeploy after every feature
-9. API + UI: review queue, approve, return, reopen (with a test of two concurrent approve/return calls)
-10. Anomaly flags
-11. Meera's overview
-12. Sample history in the seed
-13. Navigation by role, empty states
-14. Write-up
+1. Emissions calculation and status rules
+2. Owner save and submit (service and API)
+3. Owner UI: months list and entry form
+4. **Deploy to Vercel + Neon.** From here on, redeploy after every feature
+5. Review service: approve, return, reopen, with a test of two concurrent approve/return calls
+6. Review UI
+7. Meera's overview
+8. Anomaly flags
+9. Demo data in the seed
+10. Write-up
