@@ -12,13 +12,13 @@ import {
 } from "@/components/ui/empty-state";
 import { PageHeader, PageHeaderDescription, PageHeaderHeading } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { describeUser, groupByCompany } from "@/lib/users";
+import { describeUser, groupByCompany, homePathFor } from "@/lib/users";
 import { api } from "@/utils/api";
 
 export default function SignInPage() {
 	const users = api.session.users.useQuery();
 	const switchUser = api.session.switchUser.useMutation({
-		onSuccess: () => window.location.assign("/plants"),
+		onSuccess: (user) => window.location.assign(homePathFor(user)),
 		onError: () => toast.error("We could not sign you in as this user. Please try again."),
 	});
 

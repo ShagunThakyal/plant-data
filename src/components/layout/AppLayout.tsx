@@ -1,4 +1,4 @@
-import { AlertTriangle, Factory, Flame } from "lucide-react";
+import { AlertTriangle, CalendarDays, Factory, Flame } from "lucide-react";
 import { useRouter } from "next/router";
 import { type ReactNode, useEffect } from "react";
 
@@ -22,9 +22,12 @@ import {
 	useShowLabels,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ROLES, type Role, hasRole } from "@/lib/roles";
 import { api } from "@/utils/api";
 
-const NAV_ITEMS = [
+/** Sidebar links. A link with `roles` shows only to users who hold one of them. */
+const NAV_ITEMS: { href: string; label: string; icon: typeof Factory; roles?: Role[] }[] = [
+	{ href: "/months", label: "My months", icon: CalendarDays, roles: [ROLES.DATA_OWNER] },
 	{ href: "/plants", label: "Plants", icon: Factory },
 	{ href: "/factors", label: "Emission factors", icon: Flame },
 ];
@@ -62,7 +65,7 @@ export function AppLayout({ title, children }: { title: string; children: ReactN
 				</SidebarHeader>
 				<SidebarContent>
 					<SidebarGroup>
-						{NAV_ITEMS.map((item) => (
+						{NAV_ITEMS.filter((item) => !item.roles || (me.data && hasRole(me.data, ...item.roles))).map((item) => (
 							<SidebarMenuButton
 								key={item.href}
 								href={item.href}
