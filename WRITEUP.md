@@ -70,3 +70,7 @@ production. Tests now read only `.env.test` and refuse to run unless the databas
 90 automated tests pass: 52 on pure logic (dates in India time, units, emissions, status rules, flags, the
 overview) and 38 through the API against Postgres (permissions, company isolation, stale saves, two reviewers
 acting at once). Where it mattered I broke the code on purpose to see the test fail.
+
+On the live link I ran the whole loop through the user switcher for P07's October: draft, return, submit,
+send back, fix, resubmit, approve. The history listed every step in order, and Meera's Q3 rose by exactly that
+month's figures. That run also showed the Scope 2 column cut off on a laptop screen, so I moved it.
