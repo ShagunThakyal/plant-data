@@ -71,6 +71,20 @@ describe("computeFlags", () => {
 		expect(kinds(withLine("grid_power", { value: 16_000 }))).toEqual(["POWER_PER_TONNE_CLINKER:grid_power"]);
 	});
 
+	it("(b) flags power per tonne of clinker just outside 50-150, and not at the edges", () => {
+		// 1,00,000 t of clinker: 5,000 MWh is exactly 50 kWh/t and 15,000 MWh exactly 150 kWh/t.
+		const at = (mwh: number) =>
+			kinds(
+				withLine("grid_power", { value: mwh }).map((line) =>
+					line.factorKey === "clinker" ? { ...line, value: 100_000 } : line,
+				),
+			);
+		expect(at(5_000)).toEqual([]);
+		expect(at(15_000)).toEqual([]);
+		expect(at(4_990)).toEqual(["POWER_PER_TONNE_CLINKER:grid_power"]);
+		expect(at(15_010)).toEqual(["POWER_PER_TONNE_CLINKER:grid_power"]);
+	});
+
 	it("(c) flags zeros an integrated plant should not have", () => {
 		expect(kinds(withLine("clinker", { value: 0 }))).toEqual(["UNEXPECTED_ZERO:clinker"]);
 		expect(kinds(withLine("grid_power", { value: 0 }))).toContain("UNEXPECTED_ZERO:grid_power");

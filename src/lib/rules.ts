@@ -15,7 +15,11 @@ export const DUE_DAY_OF_NEXT_MONTH = 10;
 /** (a) A line differing from last month's approved value by more than this share is flagged. */
 export const BIG_CHANGE_SHARE = 0.3;
 
-/** (b) Grid power per tonne of clinker outside this range (kWh per tonne), at integrated plants. */
+/**
+ * (b) Grid power per tonne of clinker outside this range (kWh per tonne), at integrated plants. Whole-plant
+ * power on a clinker basis; why 50-150 is in DECISIONS.md. Source: GCCA GNR (about 70 kWh/t clinker up to
+ * clinker, about 104 kWh/t cement for the whole plant) and CII Energy Benchmarking for the Indian Cement Industry.
+ */
 export const POWER_PER_TONNE_CLINKER_KWH = { min: 50, max: 150 } as const;
 
 /** (b) Clinker in a month above this share of the plant's cement capacity for a month (capacity / 12). */

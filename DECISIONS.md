@@ -91,6 +91,17 @@ explanation; the reviewer sees them with that explanation. The review queue list
 
 If time runs short, flags (b) and (c) can be cut; (a), (d) and (e) stay.
 
+**Why 50–150 kWh per tonne of clinker.** The flag divides all grid power the plant buys (kiln *and* cement
+grinding) by the clinker it made, so it is a whole-plant figure on a clinker basis. Benchmarks: power up to
+clinker production is about 70 kWh/t clinker worldwide (GCCA/WBCSD GNR, 2013–14 data), and the best Indian
+plants run at about 43–55 kWh/t clinker (CII Energy Benchmarking for the Indian Cement Industry). The whole
+plant uses about 104 kWh/t cement worldwide (GNR) and about 76 kWh/t cement in India (CII); with clinker at
+about 70–75% of cement, that is roughly 100–145 kWh per tonne of clinker. So below 50 a plant is buying less
+grid power than the best plants use to make clinker alone: either it has captive or waste-heat power (common in
+India, and the flag says so) or a figure is wrong, like P01's 16. Above 150 is beyond the worldwide whole-plant
+average. We kept the range. Known limit: we do not collect captive power, so plants with a captive plant will
+be flagged low every month; the owner's note explains it. Collecting captive generation is in "next".
+
 The thresholds are a starting point. Every threshold (and the overdue day and first reportable month in
 sections 1 and 5) lives in one constants file, so they are easy to find and tune.
 
