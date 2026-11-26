@@ -3,6 +3,9 @@
 A small app for a cement company's sustainability team: a register of plants, sample logins for
 each kind of user, and the emission factors the team uses.
 
+**Live:** <https://plant-data-ochre.vercel.app> · **Write-up:** [WRITEUP.md](WRITEUP.md) (what I built, decisions,
+what I left out, how I used AI) · **Decisions:** [DECISIONS.md](DECISIONS.md)
+
 ## Stack
 
 Next.js 14 (Pages Router), React 18, tRPC 10 with TanStack Query 4, Prisma 6 on Postgres, zod,
