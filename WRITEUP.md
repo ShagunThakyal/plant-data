@@ -1,13 +1,12 @@
 # Write-up
 
-Live: <https://plant-data-ochre.vercel.app> (pick any sample user; switch from the top bar). Decisions and their
-reasons are in [DECISIONS.md](DECISIONS.md); things found while building are in [NOTES.md](NOTES.md).
+Live: <https://plant-data-ochre.vercel.app>. Detail: [DECISIONS.md](DECISIONS.md) and [NOTES.md](NOTES.md).
 
 ## What I built
 
 - **Send a month.** A data owner enters a finished month's fuel, grid power and clinker. Units are picked by
   name ("tonnes", "kilolitres"), never "MT". They save a draft, come back and submit. Last month's approved
-  value sits beside each input, and CO2 updates as they type.
+  value sits beside each input.
 - **Review a month.** Reviewers see submitted months, flagged ones first, check the figures, then approve or
   send back with a required comment.
 - **Fix and resubmit.** The owner reads the comment, corrects and resubmits; the reviewer sees what changed.
@@ -20,8 +19,7 @@ the figures. **Only approved months count in any figure Meera sees.**
 
 ## Key decisions and why
 
-1. **The month is the unit of review.** One report per plant and month, reviewed as a whole, as plants send
-   data today.
+1. **The month is the unit of review,** as plants send data today.
 2. **Status rules on the server.** One table says who may submit, approve, send back or reopen, from which
    state; nobody reviews their own plant. Each change is a conditional update on id, status and version, so
    two reviewers cannot both act, and an approval covers exactly the version reviewed.
@@ -43,8 +41,7 @@ the figures. **Only approved months count in any figure Meera sees.**
 - **Versioned revisions:** a reopened month leaves Meera's totals until approved again.
 - **Multi-reviewer sign-off** and assigning reviewers.
 - **Captive power:** we collect only grid power, so plants with their own power plant are flagged low.
-- **Next.js 16:** npm audit reports a critical Next.js advisory whose only fix is a major upgrade; most of it
-  covers features this app does not use.
+- **Next.js 16:** npm audit's critical Next.js advisory needs a major upgrade; most of it covers unused features.
 
 ## What I'd build next
 
@@ -71,6 +68,6 @@ production. Tests now read only `.env.test` and refuse to run unless the databas
 overview) and 38 through the API against Postgres (permissions, company isolation, stale saves, two reviewers
 acting at once). Where it mattered I broke the code on purpose to see the test fail.
 
-On the live link I ran the whole loop through the user switcher for P07's October: draft, return, submit,
-send back, fix, resubmit, approve. The history listed every step in order, and Meera's Q3 rose by exactly that
-month's figures. That run also showed the Scope 2 column cut off on a laptop screen, so I moved it.
+On the live link I ran the whole loop through the user switcher (draft, return, submit, send back, fix,
+resubmit, approve). The history listed every step, and Meera's Q3 rose by exactly that month's figures. The run
+also showed Meera's Scope 2 column cut off on a laptop screen, so I moved it.
