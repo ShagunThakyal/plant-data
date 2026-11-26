@@ -108,13 +108,13 @@ function PlantGrid({ data }: { data: OverviewOutput }) {
 				<TableHeader>
 					<TableRow>
 						<TableHead>Plant</TableHead>
+						<TableHead align="right">Scope 1 (t)</TableHead>
+						<TableHead align="right">Scope 2 (t)</TableHead>
 						{data.periods.map(({ period }) => (
 							<TableHead key={period} align="center">
 								{shortMonth(period)}
 							</TableHead>
 						))}
-						<TableHead align="right">Scope 1</TableHead>
-						<TableHead align="right">Scope 2</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -126,6 +126,8 @@ function PlantGrid({ data }: { data: OverviewOutput }) {
 								</Link>{" "}
 								<span className="text-text-secondary">{row.plant.name.replace(/^Nimbus /, "")}</span>
 							</TableCell>
+							<TableCell align="right">{tonnes(row.approved.scope1Tonnes)}</TableCell>
+							<TableCell align="right">{tonnes(row.approved.scope2Tonnes)}</TableCell>
 							{row.months.map((month) => (
 								<TableCell key={month.period} align="center" className="px-1">
 									{month.status === "NOT_DUE" ? (
@@ -150,25 +152,23 @@ function PlantGrid({ data }: { data: OverviewOutput }) {
 									)}
 								</TableCell>
 							))}
-							<TableCell align="right">{tonnes(row.approved.scope1Tonnes)}</TableCell>
-							<TableCell align="right">{tonnes(row.approved.scope2Tonnes)}</TableCell>
 						</TableRow>
 					))}
 					<TableRow className="bg-surface-muted font-medium">
 						<TableCell>Approved plants</TableCell>
+						<TableCell align="right">{tonnes(data.yearToDate.approved.scope1Tonnes)}</TableCell>
+						<TableCell align="right">{tonnes(data.yearToDate.approved.scope2Tonnes)}</TableCell>
 						{data.months.map((month) => (
 							<TableCell key={month.period} align="center" className="px-1 text-xs">
 								{month.coverage.expected === 0 ? "" : `${month.coverage.approved}/${month.coverage.expected}`}
 							</TableCell>
 						))}
-						<TableCell align="right">{tonnes(data.yearToDate.approved.scope1Tonnes)}</TableCell>
-						<TableCell align="right">{tonnes(data.yearToDate.approved.scope2Tonnes)}</TableCell>
 					</TableRow>
 				</TableBody>
 			</Table>
 			<CardContent className="text-xs text-text-secondary">
-				Scope totals are approved t CO2 for the year to date. A red outline marks an overdue month. Hover over a month
-				for its figures, or open it.
+				Scope 1 and Scope 2 are each plant's approved t CO2 for the year to date; the bottom row is the company. A red
+				outline marks an overdue month. Hover over a month for its figures, or open it.
 			</CardContent>
 		</Card>
 	);
